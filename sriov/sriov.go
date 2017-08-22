@@ -13,6 +13,7 @@ import (
 	"github.com/containernetworking/cni/pkg/ipam"
 	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/skel"
+	"github.com/containernetworking/cni/pkg/version"
 	"github.com/vishvananda/netlink"
 
 	. "github.com/hustcat/sriov-cni/config"
@@ -361,5 +362,5 @@ func getVFDeviceName(master string, vf int) (string, error) {
 }
 
 func main() {
-	skel.PluginMain(cmdAdd, cmdDel)
+	skel.PluginMain(cmdAdd, cmdDel, version.Legacy)
 }

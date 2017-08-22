@@ -1,45 +1,55 @@
 {
 	"ImportPath": "github.com/hustcat/sriov-cni",
-	"GoVersion": "go1.6",
-	"GodepVersion": "v74",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
 	"Packages": [
 		"./..."
 	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/containernetworking/cni/pkg/invoke",
-			"Comment": "v0.3.0-19-gfbe1a87",
-			"Rev": "fbe1a87250aed33da9a57abbd76b08eb85ec85c1"
+			"Comment": "v0.4.0",
+			"Rev": "530dd71e193012895ff7beee42cd64a02e1993da"
 		},
 		{
 			"ImportPath": "github.com/containernetworking/cni/pkg/ip",
-			"Comment": "v0.3.0-19-gfbe1a87",
-			"Rev": "fbe1a87250aed33da9a57abbd76b08eb85ec85c1"
+			"Comment": "v0.4.0",
+			"Rev": "530dd71e193012895ff7beee42cd64a02e1993da"
 		},
 		{
 			"ImportPath": "github.com/containernetworking/cni/pkg/ipam",
-			"Comment": "v0.3.0-19-gfbe1a87",
-			"Rev": "fbe1a87250aed33da9a57abbd76b08eb85ec85c1"
+			"Comment": "v0.4.0",
+			"Rev": "530dd71e193012895ff7beee42cd64a02e1993da"
 		},
 		{
 			"ImportPath": "github.com/containernetworking/cni/pkg/ns",
-			"Comment": "v0.3.0-19-gfbe1a87",
-			"Rev": "fbe1a87250aed33da9a57abbd76b08eb85ec85c1"
+			"Comment": "v0.4.0",
+			"Rev": "530dd71e193012895ff7beee42cd64a02e1993da"
 		},
 		{
 			"ImportPath": "github.com/containernetworking/cni/pkg/skel",
-			"Comment": "v0.3.0-19-gfbe1a87",
-			"Rev": "fbe1a87250aed33da9a57abbd76b08eb85ec85c1"
+			"Comment": "v0.4.0",
+			"Rev": "530dd71e193012895ff7beee42cd64a02e1993da"
 		},
 		{
 			"ImportPath": "github.com/containernetworking/cni/pkg/testutils",
-			"Comment": "v0.3.0-19-gfbe1a87",
-			"Rev": "fbe1a87250aed33da9a57abbd76b08eb85ec85c1"
+			"Comment": "v0.4.0",
+			"Rev": "530dd71e193012895ff7beee42cd64a02e1993da"
 		},
 		{
 			"ImportPath": "github.com/containernetworking/cni/pkg/types",
-			"Comment": "v0.3.0-19-gfbe1a87",
-			"Rev": "fbe1a87250aed33da9a57abbd76b08eb85ec85c1"
+			"Comment": "v0.4.0",
+			"Rev": "530dd71e193012895ff7beee42cd64a02e1993da"
+		},
+		{
+			"ImportPath": "github.com/containernetworking/cni/pkg/utils/hwaddr",
+			"Comment": "v0.4.0",
+			"Rev": "530dd71e193012895ff7beee42cd64a02e1993da"
+		},
+		{
+			"ImportPath": "github.com/containernetworking/cni/pkg/version",
+			"Comment": "v0.4.0",
+			"Rev": "530dd71e193012895ff7beee42cd64a02e1993da"
 		},
 		{
 			"ImportPath": "github.com/coreos/go-iptables/iptables",
@@ -194,7 +204,7 @@
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "e11762ca30adc5b39fdbfd8c4250dabeb8e456d3"
+			"Rev": "076b546753157f758b316e59bcb51e6807c04057"
 		}
 	]
 }
