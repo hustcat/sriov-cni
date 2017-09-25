@@ -29,7 +29,6 @@ func setupVF(conf *SriovConf, ifName string, netns ns.NetNS) error {
 	var (
 		err       error
 		vfDevName string
-		locker *FileLocker
 	)
 
 	vfIdx := 0
@@ -38,13 +37,13 @@ func setupVF(conf *SriovConf, ifName string, netns ns.NetNS) error {
 
 	if args.VF != 0 {
 		vfIdx = int(args.VF)
-		vfDevName, locker, err = getVFDeviceName(masterName, vfIdx)
+		vfDevName, err = getVFDeviceName(masterName, vfIdx)
 		if err != nil {
 			return err
 		}
 	} else {
 		// alloc a free virtual function
-		if vfIdx, vfDevName, locker, err = allocFreeVF(masterName); err != nil {
+		if vfIdx, vfDevName, err = allocFreeVF(masterName); err != nil {
 			return err
 		}
 	}
@@ -203,37 +202,36 @@ func renameLink(curName, newName string) error {
 	return netlink.LinkSetName(link, newName)
 }
 
-func allocFreeVF(master string) (int, string, *FileLocker, error) {
+func allocFreeVF(master string) (int, string, error) {
 	vfIdx := -1
 	devName := ""
 
 	sriovFile := fmt.Sprintf("/sys/class/net/%s/device/sriov_numvfs", master)
 	if _, err := os.Lstat(sriovFile); err != nil {
-		return -1, "", nil, fmt.Errorf("failed to open the sriov_numfs of device %q: %v", master, err)
+		return -1, "", fmt.Errorf("failed to open the sriov_numfs of device %q: %v", master, err)
 	}
 
 	data, err := ioutil.ReadFile(sriovFile)
 	if err != nil {
-		return -1, "", nil, fmt.Errorf("failed to read the sriov_numfs of device %q: %v", master, err)
+		return -1, "", fmt.Errorf("failed to read the sriov_numfs of device %q: %v", master, err)
 	}
 
 	if len(data) == 0 {
-		return -1, "", nil, fmt.Errorf("no data in the file %q", sriovFile)
+		return -1, "", fmt.Errorf("no data in the file %q", sriovFile)
 	}
 
 	sriovNumfs := strings.TrimSpace(string(data))
 	vfTotal, err := strconv.Atoi(sriovNumfs)
 	if err != nil {
-		return -1, "", nil, fmt.Errorf("failed to convert sriov_numfs(byte value) to int of device %q: %v", master, err)
+		return -1, "", fmt.Errorf("failed to convert sriov_numfs(byte value) to int of device %q: %v", master, err)
 	}
 
 	if vfTotal <= 0 {
-		return -1, "", nil, fmt.Errorf("no virtual function in the device %q: %v", master)
+		return -1, "", fmt.Errorf("no virtual function in the device %q: %v", master)
 	}
 
-	var locker *FileLocker
 	for vf := 0; vf < vfTotal; vf++ {
-		devName, locker, err = getVFDeviceName(master, vf)
+		devName, err = getVFDeviceName(master, vf)
 
 		// got a free vf
 		if err == nil {
@@ -243,37 +241,32 @@ func allocFreeVF(master string) (int, string, *FileLocker, error) {
 	}
 
 	if vfIdx == -1 {
-		return -1, "", nil, fmt.Errorf("can not get a free virtual function in directory %s", master)
+		return -1, "", fmt.Errorf("can not get a free virtual function in directory %s", master)
 	}
-	return vfIdx, devName, locker, nil
+	return vfIdx, devName, nil
 }
 
-func getVFDeviceName(master string, vf int) (string, *FileLocker, error) {
+func getVFDeviceName(master string, vf int) (string, error) {
 	vfDir := fmt.Sprintf("/sys/class/net/%s/device/virtfn%d/net", master, vf)
 	if _, err := os.Lstat(vfDir); err != nil {
-		return "", nil, fmt.Errorf("failed to open the virtfn%d dir of the device %q: %v", vf, master, err)
+		return "", fmt.Errorf("failed to open the virtfn%d dir of the device %q: %v", vf, master, err)
 	}
 
 	infos, err := ioutil.ReadDir(vfDir)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to read the virtfn%d dir of the device %q: %v", vf, master, err)
+		return "", fmt.Errorf("failed to read the virtfn%d dir of the device %q: %v", vf, master, err)
 	}
 
 	if len(infos) != 1 {
-		return "", nil, fmt.Errorf("no network device in directory %s", vfDir)
+		return "", fmt.Errorf("no network device in directory %s", vfDir)
 	}
 
-	locker, err := NewFileLocker(vf)
+	err = locker.Lock(vf)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to create file locker for %d: %v", vf, err)
+		return "", fmt.Errorf("failed to add exclude lock to %d: %v", vf, err)
 	}
 
-	err = locker.Lock()
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to add exclude lock to %d: %v", vf, err)
-	}
-
-	return infos[0].Name(), locker, nil
+	return infos[0].Name(), nil
 }
 
 func main() {
