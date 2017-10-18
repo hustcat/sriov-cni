@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -18,11 +19,27 @@ import (
 	. "github.com/hustcat/sriov-cni/config"
 )
 
+var defaultDataDir = "/var/lib/cni/sriov"
+
+var locker *FileLock
+
 func init() {
 	// this ensures that main runs only on main thread (thread group leader).
 	// since namespace ops (unshare, setns) are done for a single thread, we
 	// must ensure that the goroutine does not jump from OS thread to thread
 	runtime.LockOSThread()
+}
+
+func initLocker() error {
+	var err error
+
+	if err = os.MkdirAll(defaultDataDir, 0644); err != nil {
+		return err
+	}
+
+	path := filepath.Join(defaultDataDir, "sriov.lock")
+	locker, err = NewFileLock(path)
+	return err
 }
 
 func setupVF(conf *SriovConf, ifName string, netns ns.NetNS) error {
@@ -48,7 +65,6 @@ func setupVF(conf *SriovConf, ifName string, netns ns.NetNS) error {
 		}
 	}
 
-	defer locker.Unlock()
 	m, err := netlink.LinkByName(masterName)
 	if err != nil {
 		return fmt.Errorf("failed to lookup master %q: %v", masterName, err)
@@ -134,6 +150,11 @@ func releaseVF(conf *SriovConf, ifName string, netns ns.NetNS) error {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
+	if err := initLocker(); err != nil {
+		return err
+	}
+	defer locker.Close()
+
 	n, err := LoadConf(args.StdinData, args.Args)
 	if err != nil {
 		return err
@@ -230,6 +251,11 @@ func allocFreeVF(master string) (int, string, error) {
 		return -1, "", fmt.Errorf("no virtual function in the device %q: %v", master)
 	}
 
+	if err = locker.Lock(); err != nil {
+		return -1, "", fmt.Errorf("failed to get lock: %v", err)
+	}
+	defer locker.Unlock()
+
 	for vf := 0; vf < vfTotal; vf++ {
 		devName, err = getVFDeviceName(master, vf)
 
@@ -259,11 +285,6 @@ func getVFDeviceName(master string, vf int) (string, error) {
 
 	if len(infos) != 1 {
 		return "", fmt.Errorf("no network device in directory %s", vfDir)
-	}
-
-	err = locker.Lock(vf)
-	if err != nil {
-		return "", fmt.Errorf("failed to add exclude lock to %d: %v", vf, err)
 	}
 
 	return infos[0].Name(), nil

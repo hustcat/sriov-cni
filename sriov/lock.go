@@ -1,43 +1,35 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"syscall"
 )
 
-var defaultDeviceDir = "/var/lib/cni/devices"
+type FileLock struct {
+	f *os.File
+}
 
-var locker = &FileLocker{}
+// NewFileLock opens file/dir at path and returns unlocked FileLock object
+func NewFileLock(path string) (*FileLock, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
 
-type FileLocker struct {
-	file *os.File
+	return &FileLock{f}, nil
+}
+
+// Close closes underlying file
+func (l *FileLock) Close() error {
+	return l.f.Close()
 }
 
 // Lock acquires an exclusive lock
-func (l *FileLocker) Lock(vf int) error {
-	path := fmt.Sprintf("%s/%d.lock", defaultDeviceDir, vf)
-
-	if err := os.MkdirAll(defaultDeviceDir, 0644); err != nil {
-		return err
-	}
-
-	file, err := os.Open(path)
-	if err != nil {
-		file, err := os.Create(path)
-		if err != nil {
-			return err
-		}
-		l.file = file
-	} else {
-		l.file = file
-	}
-
-	return syscall.Flock(int(l.file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
+func (l *FileLock) Lock() error {
+	return syscall.Flock(int(l.f.Fd()), syscall.LOCK_EX)
 }
 
 // Unlock releases the lock
-func (l *FileLocker) Unlock() error {
-	defer l.file.Close()
-	return syscall.Flock(int(l.file.Fd()), syscall.LOCK_UN)
+func (l *FileLock) Unlock() error {
+	return syscall.Flock(int(l.f.Fd()), syscall.LOCK_UN)
 }
