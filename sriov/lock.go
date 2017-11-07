@@ -11,7 +11,7 @@ type FileLock struct {
 
 // NewFileLock opens file/dir at path and returns unlocked FileLock object
 func NewFileLock(path string) (*FileLock, error) {
-	f, err := os.Open(path)
+	f, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return nil, err
 	}
