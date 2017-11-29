@@ -236,7 +236,7 @@ func allocFreeVF(master string) (int, string, error) {
 	}
 
 	if vfTotal <= 0 {
-		return -1, "", fmt.Errorf("no virtual function in the device %q: %v", master)
+		return -1, "", fmt.Errorf("no virtual function in the device %q", master)
 	}
 
 	for vf := 0; vf < vfTotal; vf++ {
