@@ -27,41 +27,41 @@ func init() {
 
 func setupPF(conf *SriovConf, ifName string, netns ns.NetNS) error {
 	var (
-                err       error
-        )
+		err error
+	)
 
-        masterName := conf.Net.Master
-        args := conf.Args
+	masterName := conf.Net.Master
+	args := conf.Args
 
-        master, err := netlink.LinkByName(masterName)
-        if err != nil {
-                return fmt.Errorf("failed to lookup master %q: %v", masterName, err)
-        }
+	master, err := netlink.LinkByName(masterName)
+	if err != nil {
+		return fmt.Errorf("failed to lookup master %q: %v", masterName, err)
+	}
 
-        if args.MAC != "" {
-                return fmt.Errorf("modifying mac address of PF is not supported")
-        }
+	if args.MAC != "" {
+		return fmt.Errorf("modifying mac address of PF is not supported")
+	}
 
-        if args.VLAN != 0 {
-                return fmt.Errorf("modifying vlan of PF is not supported")
-        }
+	if args.VLAN != 0 {
+		return fmt.Errorf("modifying vlan of PF is not supported")
+	}
 
-        if err = netlink.LinkSetUp(master); err != nil {
-                return fmt.Errorf("failed to setup PF")
-        }
+	if err = netlink.LinkSetUp(master); err != nil {
+		return fmt.Errorf("failed to setup PF")
+	}
 
-        // move PF device to ns
-        if err = netlink.LinkSetNsFd(master, int(netns.Fd())); err != nil {
-                return fmt.Errorf("failed to move PF to netns: %v", err)
-        }
+	// move PF device to ns
+	if err = netlink.LinkSetNsFd(master, int(netns.Fd())); err != nil {
+		return fmt.Errorf("failed to move PF to netns: %v", err)
+	}
 
-        return netns.Do(func(_ ns.NetNS) error {
-                err := renameLink(masterName, ifName)
-                if err != nil {
-                        return fmt.Errorf("failed to rename PF to %q: %v", ifName, err)
+	return netns.Do(func(_ ns.NetNS) error {
+		err := renameLink(masterName, ifName)
+		if err != nil {
+			return fmt.Errorf("failed to rename PF to %q: %v", ifName, err)
 		}
-                return nil
-        })
+		return nil
+	})
 }
 
 func setupVF(conf *SriovConf, ifName string, netns ns.NetNS) error {
@@ -220,14 +220,14 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	defer netns.Close()
 
-	if n.Net.PFOnly != true { 
+	if n.Net.PFOnly != true {
 		if err = setupVF(n, args.IfName, netns); err != nil {
-                        return err
+			return err
 		}
 	} else {
 		if err = setupPF(n, args.IfName, netns); err != nil {
-        	        return err
-	        }
+			return err
+		}
 	}
 
 	// run the IPAM plugin and get back the config to apply
@@ -274,8 +274,8 @@ func cmdDel(args *skel.CmdArgs) error {
 
 	if n.Net.PFOnly != true {
 		if err = releaseVF(n, args.IfName, netns); err != nil {
-                        return err
-                }
+			return err
+		}
 	} else {
 		if err = releasePF(n, args.IfName, netns); err != nil {
 			return err
