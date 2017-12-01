@@ -24,6 +24,7 @@ func (i *UnmarshallableInt) UnmarshalText(data []byte) error {
 type NetConf struct {
 	types.NetConf
 	Master string `json:"master"`
+	PFOnly bool   `json:"pfOnly"`
 }
 
 type NetArgs struct {
