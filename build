@@ -13,6 +13,14 @@ export GO15VENDOREXPERIMENT=1
 export GOBIN=${PWD}/bin
 export GOPATH=${PWD}/gopath
 
+FMT="config fixipam sriov"
+echo "Checking gofmt..."
+fmtRes=$(gofmt -l $FMT)
+if [ -n "${fmtRes}" ]; then
+    echo -e "gofmt checking failed:\n${fmtRes}"
+    exit 255
+fi
+
 echo "Building plugins"
 go install "$@" ${REPO_PATH}/sriov
 go install "$@" ${REPO_PATH}/fixipam
