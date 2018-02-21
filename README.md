@@ -31,6 +31,7 @@ options ixgbe max_vfs=8,8
 * `type` (string, required): "sriov"
 * `master` (string, required): name of the PF
 * `ipam` (dictionary, required): IPAM configuration to be used for this network.
+* `pfOnly` (bool, optional): skip VFs, only assign PF into container
 
 ## Extra arguments
 
@@ -85,6 +86,49 @@ lo        Link encap:Local Loopback
           TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
           collisions:0 txqueuelen:0 
           RX bytes:0 (0.0 b)  TX bytes:0 (0.0 b)
+```
+
+SRIOV VFs allow network SLAs. It's very useful.
+And sometimes, we also need to occupy the entire NIC, such as vFirewall.
+In this case, we can use pfOnly mode.
+
+Create SRIOV network with PF mode.
+Please see following as reference:
+```
+# cat > /etc/cni/net.d/10-mynet.conf <<EOF
+{
+    "name": "mynet",
+    "type": "sriov",
+    "master": "eth1",
+    "pfOnly": true,
+    "ipam": {
+        "type": "fixipam",
+        "subnet": "10.55.206.0/26",
+        "routes": [
+            { "dst": "0.0.0.0/0" }
+        ],
+        "gateway": "10.55.206.1"
+    }
+}
+EOF
+```
+
+Add container to network:
+
+```sh
+# CNI_PATH=`pwd`/bin
+# cd scripts
+# CNI_PATH=$CNI_PATH CNI_ARGS="IgnoreUnknown=1;IP=10.55.206.46" ./priv-net-run.sh ifconfig
+contid=148e21a85bcc7aaf
+netnspath=/var/run/netns/148e21a85bcc7aaf
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.55.206.46  netmask 255.255.255.192  broadcast 0.0.0.0
+        inet6 fe80::215:5dff:fe38:101  prefixlen 64  scopeid 0x20<link>
+        ether 00:15:5d:38:01:01  txqueuelen 1000  (Ethernet)
+        RX packets 29  bytes 4960 (4.8 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 11  bytes 1398 (1.3 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
 ```
 
 Remove container from network:
