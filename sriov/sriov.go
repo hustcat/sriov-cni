@@ -88,14 +88,23 @@ func setupVF(conf *SriovConf, ifName string, netns ns.NetNS) error {
 		}
 	}
 
-	m, err := netlink.LinkByName(masterName)
-	if err != nil {
-		return fmt.Errorf("failed to lookup master %q: %v", masterName, err)
-	}
-
 	vfDev, err := netlink.LinkByName(vfDevName)
 	if err != nil {
 		return fmt.Errorf("failed to lookup vf device %q: %v", vfDevName, err)
+	}
+
+	if err = netlink.LinkSetUp(vfDev); err != nil {
+		return fmt.Errorf("failed to setup vf %d device: %v", vfIdx, err)
+	}
+
+	// move VF device to ns
+	if err = netlink.LinkSetNsFd(vfDev, int(netns.Fd())); err != nil {
+		return fmt.Errorf("failed to move vf %d to netns: %v", vfIdx, err)
+	}
+
+	m, err := netlink.LinkByName(masterName)
+	if err != nil {
+		return fmt.Errorf("failed to lookup master %q: %v", masterName, err)
 	}
 
 	// set hardware address
@@ -113,15 +122,6 @@ func setupVF(conf *SriovConf, ifName string, netns ns.NetNS) error {
 		if err = netlink.LinkSetVfVlan(m, vfIdx, int(args.VLAN)); err != nil {
 			return fmt.Errorf("failed to set vf %d vlan: %v", vfIdx, err)
 		}
-	}
-
-	if err = netlink.LinkSetUp(vfDev); err != nil {
-		return fmt.Errorf("failed to setup vf %d device: %v", vfIdx, err)
-	}
-
-	// move VF device to ns
-	if err = netlink.LinkSetNsFd(vfDev, int(netns.Fd())); err != nil {
-		return fmt.Errorf("failed to move vf %d to netns: %v", vfIdx, err)
 	}
 
 	return netns.Do(func(_ ns.NetNS) error {
