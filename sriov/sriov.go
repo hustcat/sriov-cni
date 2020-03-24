@@ -14,6 +14,7 @@ import (
 	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/version"
+	"github.com/j-keck/arping"
 	"github.com/vishvananda/netlink"
 
 	. "github.com/hustcat/sriov-cni/config"
@@ -241,7 +242,27 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	err = netns.Do(func(_ ns.NetNS) error {
-		return ipam.ConfigureIface(args.IfName, result)
+		if err := ipam.ConfigureIface(args.IfName, result); err != nil {
+			return err
+		}
+		// add arping, in case for arp ttl cache
+		contEth, err := net.InterfaceByName(args.IfName)
+		if err != nil {
+			return err
+		}
+		if result.IP4 != nil {
+			if err := arping.GratuitousArpOverIface(result.IP4.IP.IP, *contEth); err != nil {
+				return err
+			}
+		}
+
+		if result.IP6 != nil {
+			if err := arping.GratuitousArpOverIface(result.IP6.IP.IP, *contEth); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	})
 	if err != nil {
 		return err
