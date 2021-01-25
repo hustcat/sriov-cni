@@ -144,9 +144,11 @@ func releasePF(conf *SriovConf, ifName string, netns ns.NetNS) error {
 	return netns.Do(func(_ ns.NetNS) error {
 
 		// get PF device
+		// for kata containers, the network interface bind back to host by runtime
+		// hence we'll skip this "failed to lookup device' error
 		master, err := netlink.LinkByName(ifName)
 		if err != nil {
-			return fmt.Errorf("failed to lookup device %s: %v", ifName, err)
+			return nil
 		}
 
 		masterName := conf.Net.Master
@@ -181,9 +183,11 @@ func releaseVF(conf *SriovConf, ifName string, netns ns.NetNS) error {
 	return netns.Do(func(_ ns.NetNS) error {
 
 		// get VF device
+		// for kata containers, the network interface bind back to host by runtime
+		// hence we'll skip this "failed to lookup device' error
 		vfDev, err := netlink.LinkByName(ifName)
 		if err != nil {
-			return fmt.Errorf("failed to lookup device %s: %v", ifName, err)
+			return nil
 		}
 
 		// device name in init netns
