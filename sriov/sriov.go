@@ -20,6 +20,8 @@ import (
 	. "github.com/hustcat/sriov-cni/config"
 )
 
+var locker *FileLocker
+
 func init() {
 	// this ensures that main runs only on main thread (thread group leader).
 	// since namespace ops (unshare, setns) are done for a single thread, we
@@ -226,6 +228,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	defer netns.Close()
 
+	// use file lock to avoid race condition btw process
+	locker.Lock()
 	if n.Net.PFOnly != true {
 		if err = setupVF(n, args.IfName, netns); err != nil {
 			return err
@@ -235,6 +239,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 			return err
 		}
 	}
+	locker.Unlock()
 
 	// run the IPAM plugin and get back the config to apply
 	result, err := ipam.ExecAdd(n.Net.IPAM.Type, args.StdinData)
